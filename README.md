@@ -4,85 +4,84 @@
 
 [README](README.md) | [中文文档](README_zh.md)
 
-## What is frp?
+frp 是一个可用于内网穿透的高性能的反向代理应用，支持 tcp, udp 协议，为 http 和 https 应用协议提供了额外的能力，且尝试性支持了点对点穿透。
 
-frp is a fast reverse proxy to help you expose a local server behind a NAT or firewall to the internet. As of now, it supports tcp & udp, as well as http and https protocols, where requests can be forwarded to internal services by domain name.
-
-Now it also try to support p2p connect.
-
-## Table of Contents
+## 目录
 
 <!-- vim-markdown-toc GFM -->
 
-* [Status](#status)
-* [Architecture](#architecture)
-* [Example Usage](#example-usage)
-    * [Access your computer in LAN by SSH](#access-your-computer-in-lan-by-ssh)
-    * [Visit your web service in LAN by custom domains](#visit-your-web-service-in-lan-by-custom-domains)
-    * [Forward DNS query request](#forward-dns-query-request)
-    * [Forward unix domain socket](#forward-unix-domain-socket)
-    * [Expose a simple http file server](#expose-a-simple-http-file-server)
-    * [Enable HTTPS for local HTTP service](#enable-https-for-local-http-service)
-    * [Expose your service in security](#expose-your-service-in-security)
-    * [P2P Mode](#p2p-mode)
-* [Features](#features)
-    * [Configuration File](#configuration-file)
-    * [Configuration file template](#configuration-file-template)
+* [开发状态](#开发状态)
+* [架构](#架构)
+* [使用示例](#使用示例)
+    * [通过 ssh 访问公司内网机器](#通过-ssh-访问公司内网机器)
+    * [通过自定义域名访问部署于内网的 web 服务](#通过自定义域名访问部署于内网的-web-服务)
+    * [转发 DNS 查询请求](#转发-dns-查询请求)
+    * [转发 Unix域套接字](#转发-unix域套接字)
+    * [对外提供简单的文件访问服务](#对外提供简单的文件访问服务)
+    * [为本地 HTTP 服务启用 HTTPS](#为本地-http-服务启用-https)
+    * [安全地暴露内网服务](#安全地暴露内网服务)
+    * [点对点内网穿透](#点对点内网穿透)
+* [功能说明](#功能说明)
+    * [配置文件](#配置文件)
+    * [配置文件模版渲染](#配置文件模版渲染)
     * [Dashboard](#dashboard)
     * [Admin UI](#admin-ui)
-    * [Authentication](#authentication)
-    * [Encryption and Compression](#encryption-and-compression)
+    * [身份验证](#身份验证)
+    * [加密与压缩](#加密与压缩)
         * [TLS](#tls)
-    * [Hot-Reload frpc configuration](#hot-reload-frpc-configuration)
-    * [Get proxy status from client](#get-proxy-status-from-client)
-    * [Port White List](#port-white-list)
-    * [Port Reuse](#port-reuse)
-    * [TCP Stream Multiplexing](#tcp-stream-multiplexing)
-    * [Support KCP Protocol](#support-kcp-protocol)
-    * [Connection Pool](#connection-pool)
-    * [Load balancing](#load-balancing)
-    * [Health Check](#health-check)
-    * [Rewriting the Host Header](#rewriting-the-host-header)
-    * [Set Headers In HTTP Request](#set-headers-in-http-request)
-    * [Get Real IP](#get-real-ip)
+    * [客户端热加载配置文件](#客户端热加载配置文件)
+    * [客户端查看代理状态](#客户端查看代理状态)
+    * [端口白名单](#端口白名单)
+    * [端口复用](#端口复用)
+    * [TCP 多路复用](#tcp-多路复用)
+    * [底层通信可选 kcp 协议](#底层通信可选-kcp-协议)
+    * [连接池](#连接池)
+    * [负载均衡](#负载均衡)
+    * [健康检查](#健康检查)
+    * [修改 Host Header](#修改-host-header)
+    * [设置 HTTP 请求的 header](#设置-http-请求的-header)
+    * [获取用户真实 IP](#获取用户真实-ip)
         * [HTTP X-Forwarded-For](#http-x-forwarded-for)
         * [Proxy Protocol](#proxy-protocol)
-    * [Password protecting your web service](#password-protecting-your-web-service)
-    * [Custom subdomain names](#custom-subdomain-names)
-    * [URL routing](#url-routing)
-    * [Connect frps by HTTP PROXY](#connect-frps-by-http-proxy)
-    * [Range ports mapping](#range-ports-mapping)
-    * [Plugin](#plugin)
-* [Development Plan](#development-plan)
-* [Contributing](#contributing)
-* [Donation](#donation)
-    * [AliPay](#alipay)
-    * [Wechat Pay](#wechat-pay)
-    * [Paypal](#paypal)
+    * [通过密码保护你的 web 服务](#通过密码保护你的-web-服务)
+    * [自定义二级域名](#自定义二级域名)
+    * [URL 路由](#url-路由)
+    * [通过代理连接 frps](#通过代理连接-frps)
+    * [范围端口映射](#范围端口映射)
+    * [插件](#插件)
+* [开发计划](#开发计划)
+* [为 frp 做贡献](#为-frp-做贡献)
+* [捐助](#捐助)
+    * [知识星球](#知识星球)
+    * [支付宝扫码捐赠](#支付宝扫码捐赠)
+    * [微信支付捐赠](#微信支付捐赠)
+    * [Paypal 捐赠](#paypal-捐赠)
 
 <!-- vim-markdown-toc -->
 
-## Status
+## 开发状态
 
-frp is under development and you can try it with latest release version. Master branch for releasing stable version when dev branch for developing.
+frp 仍然处于开发阶段，未经充分测试与验证，不推荐用于生产环境。
 
-**We may change any protocol and can't promise backward compatible. Please check the release log when upgrading.**
+master 分支用于发布稳定版本，dev 分支用于开发，您可以尝试下载最新的 release 版本进行测试。
 
-## Architecture
+**目前的交互协议可能随时改变，不保证向后兼容，升级新版本时需要注意公告说明同时升级服务端和客户端。**
+
+## 架构
 
 ![architecture](/doc/pic/architecture.png)
 
-## Example Usage
+## 使用示例
 
-Firstly, download the latest programs from [Release](https://github.com/fatedier/frp/releases) page according to your os and arch.
+根据对应的操作系统及架构，从 [Release](https://github.com/fatedier/frp/releases) 页面下载最新版本的程序。
 
-Put **frps** and **frps.ini** to your server with public IP.
+将 **frps** 及 **frps.ini** 放到具有公网 IP 的机器上。
 
-Put **frpc** and **frpc.ini** to your server in LAN.
+将 **frpc** 及 **frpc.ini** 放到处于内网环境的机器上。
 
-### Access your computer in LAN by SSH
+### 通过 ssh 访问公司内网机器
 
-1. Modify frps.ini:
+1. 修改 frps.ini 文件，这里使用了最简化的配置：
 
   ```ini
   # frps.ini
@@ -90,18 +89,18 @@ Put **frpc** and **frpc.ini** to your server in LAN.
   bind_port = 7000
   ```
 
-2. Start frps:
+2. 启动 frps：
 
   `./frps -c ./frps.ini`
 
-3. Modify frpc.ini, `server_addr` is your frps's server IP:
+3. 修改 frpc.ini 文件，假设 frps 所在服务器的公网 IP 为 x.x.x.x；
 
   ```ini
   # frpc.ini
   [common]
   server_addr = x.x.x.x
   server_port = 7000
-
+  
   [ssh]
   type = tcp
   local_ip = 127.0.0.1
@@ -109,21 +108,19 @@ Put **frpc** and **frpc.ini** to your server in LAN.
   remote_port = 6000
   ```
 
-4. Start frpc:
+4. 启动 frpc：
 
   `./frpc -c ./frpc.ini`
 
-5. Connect to server in LAN by ssh assuming that username is test:
+5. 通过 ssh 访问内网机器，假设用户名为 test：
 
   `ssh -oPort=6000 test@x.x.x.x`
 
-### Visit your web service in LAN by custom domains
+### 通过自定义域名访问部署于内网的 web 服务
 
-Sometimes we want to expose a local web service behind a NAT network to others for testing with your own domain name and unfortunately we can't resolve a domain name to a local ip.
+有时想要让其他人通过域名访问或者测试我们在本地搭建的 web 服务，但是由于本地机器没有公网 IP，无法将域名解析到本地的机器，通过 frp 就可以实现这一功能，以下示例为 http 服务，https 服务配置方法相同， vhost_http_port 替换为 vhost_https_port， type 设置为 https 即可。
 
-However, we can expose a http or https service using frp.
-
-1. Modify frps.ini, configure http port 8080:
+1. 修改 frps.ini 文件，设置 http 访问端口为 8080：
 
   ```ini
   # frps.ini
@@ -132,11 +129,11 @@ However, we can expose a http or https service using frp.
   vhost_http_port = 8080
   ```
 
-2. Start frps:
+2. 启动 frps；
 
   `./frps -c ./frps.ini`
 
-3. Modify frpc.ini and set remote frps server's IP as x.x.x.x. The `local_port` is the port of your web service:
+3. 修改 frpc.ini 文件，假设 frps 所在的服务器的 IP 为 x.x.x.x，local_port 为本地机器上 web 服务对应的端口, 绑定自定义域名 `www.yourdomain.com`:
 
   ```ini
   # frpc.ini
@@ -150,17 +147,19 @@ However, we can expose a http or https service using frp.
   custom_domains = www.yourdomain.com
   ```
 
-4. Start frpc:
+4. 启动 frpc：
 
   `./frpc -c ./frpc.ini`
 
-5. Resolve A record of `www.yourdomain.com` to IP `x.x.x.x` or CNAME record to your origin domain.
+5. 将 `www.yourdomain.com` 的域名 A 记录解析到 IP `x.x.x.x`，如果服务器已经有对应的域名，也可以将 CNAME 记录解析到服务器原先的域名。
 
-6. Now visit your local web service using url `http://www.yourdomain.com:8080`.
+6. 通过浏览器访问 `http://www.yourdomain.com:8080` 即可访问到处于内网机器上的 web 服务。
 
-### Forward DNS query request
+### 转发 DNS 查询请求
 
-1. Modify frps.ini:
+DNS 查询请求通常使用 UDP 协议，frp 支持对内网 UDP 服务的穿透，配置方式和 TCP 基本一致。
+
+1. 修改 frps.ini 文件：
 
   ```ini
   # frps.ini
@@ -168,18 +167,18 @@ However, we can expose a http or https service using frp.
   bind_port = 7000
   ```
 
-2. Start frps:
+2. 启动 frps：
 
   `./frps -c ./frps.ini`
 
-3. Modify frpc.ini, set remote frps's server IP as x.x.x.x, forward dns query request to google dns server `8.8.8.8:53`:
+3. 修改 frpc.ini 文件，设置 frps 所在服务器的 IP 为 x.x.x.x，转发到 Google 的 DNS 查询服务器 `8.8.8.8` 的 udp 53 端口：
 
   ```ini
   # frpc.ini
   [common]
   server_addr = x.x.x.x
   server_port = 7000
-
+  
   [dns]
   type = udp
   local_ip = 8.8.8.8
@@ -187,28 +186,28 @@ However, we can expose a http or https service using frp.
   remote_port = 6000
   ```
 
-4. Start frpc:
+4. 启动 frpc：
 
   `./frpc -c ./frpc.ini`
 
-5. Send dns query request by dig:
+5. 通过 dig 测试 UDP 包转发是否成功，预期会返回 `www.google.com` 域名的解析结果：
 
   `dig @x.x.x.x -p 6000 www.google.com`
 
-### Forward unix domain socket
+### 转发 Unix域套接字
 
-Using tcp port to connect unix domain socket like docker daemon.
+通过 tcp 端口访问内网的 unix域套接字(例如和 docker daemon 通信)。
 
-Configure frps same as above.
+frps 的部署步骤同上。
 
-1. Start frpc with configurations:
+1. 启动 frpc，启用 `unix_domain_socket` 插件，配置如下：
 
   ```ini
   # frpc.ini
   [common]
   server_addr = x.x.x.x
   server_port = 7000
-
+  
   [unix_domain_socket]
   type = tcp
   remote_port = 6000
@@ -216,17 +215,17 @@ Configure frps same as above.
   plugin_unix_path = /var/run/docker.sock
   ```
 
-2. Get docker version by curl command:
+2. 通过 curl 命令查看 docker 版本信息
 
   `curl http://x.x.x.x:6000/version`
 
-### Expose a simple http file server
+### 对外提供简单的文件访问服务
 
-A simple way to visit files in the LAN.
+通过 `static_file` 插件可以对外提供一个简单的基于 HTTP 的文件访问服务。
 
-Configure frps same as above.
+frps 的部署步骤同上。
 
-1. Start frpc with configurations:
+1. 启动 frpc，启用 `static_file` 插件，配置如下：
 
   ```ini
   # frpc.ini
@@ -238,17 +237,21 @@ Configure frps same as above.
   type = tcp
   remote_port = 6000
   plugin = static_file
+  # 要对外暴露的文件目录
   plugin_local_path = /tmp/file
+  # 访问 url 中会被去除的前缀，保留的内容即为要访问的文件路径
   plugin_strip_prefix = static
   plugin_http_user = abc
   plugin_http_passwd = abc
   ```
 
-2. Visit `http://x.x.x.x:6000/static/` by your browser, set correct user and password, so you can see files in `/tmp/file`.
+2. 通过浏览器访问 `http://x.x.x.x:6000/static/` 来查看位于 `/tmp/file` 目录下的文件，会要求输入已设置好的用户名和密码。
 
-### Enable HTTPS for local HTTP service
+### 为本地 HTTP 服务启用 HTTPS
 
-1. Start frpc with configurations:
+通过 `https2http` 插件可以让本地 HTTP 服务转换成 HTTPS 服务对外提供。
+
+1. 启用 frpc，启用 `https2http` 插件，配置如下:
 
   ```ini
   # frpc.ini
@@ -262,22 +265,26 @@ Configure frps same as above.
 
   plugin = https2http
   plugin_local_addr = 127.0.0.1:80
+
+  # HTTPS 证书相关的配置
   plugin_crt_path = ./server.crt
   plugin_key_path = ./server.key
   plugin_host_header_rewrite = 127.0.0.1
   ```
 
-2. Visit `https://test.yourdomain.com`.
+2. 通过浏览器访问 `https://test.yourdomain.com` 即可。
 
-### Expose your service in security
+### 安全地暴露内网服务
 
-For some services, if expose them to the public network directly will be a security risk.
+对于某些服务来说如果直接暴露于公网上将会存在安全隐患。
 
-**stcp(secret tcp)** helps you create a proxy avoiding any one can access it.
+使用 **stcp(secret tcp)** 类型的代理可以避免让任何人都能访问到要穿透的服务，但是访问者也需要运行另外一个 frpc。
 
-Configure frps same as above.
+以下示例将会创建一个只有自己能访问到的 ssh 服务代理。
 
-1. Start frpc, forward ssh port and `remote_port` is useless:
+frps 的部署步骤同上。
+
+1. 启动 frpc，转发内网的 ssh 服务，配置如下，不需要指定远程端口：
 
   ```ini
   # frpc.ini
@@ -287,12 +294,13 @@ Configure frps same as above.
 
   [secret_ssh]
   type = stcp
+  # 只有 sk 一致的用户才能访问到此服务
   sk = abcdefg
   local_ip = 127.0.0.1
   local_port = 22
   ```
 
-2. Start another frpc in which you want to connect this ssh server:
+2. 在要访问这个服务的机器上启动另外一个 frpc，配置如下：
 
   ```ini
   # frpc.ini
@@ -302,30 +310,35 @@ Configure frps same as above.
 
   [secret_ssh_visitor]
   type = stcp
+  # stcp 的访问者
   role = visitor
+  # 要访问的 stcp 代理的名字
   server_name = secret_ssh
   sk = abcdefg
+  # 绑定本地端口用于访问 ssh 服务
   bind_addr = 127.0.0.1
   bind_port = 6000
   ```
 
-3. Connect to server in LAN by ssh assuming that username is test:
+3. 通过 ssh 访问内网机器，假设用户名为 test：
 
   `ssh -oPort=6000 test@127.0.0.1`
 
-### P2P Mode
+### 点对点内网穿透
 
-**xtcp** is designed for transmitting a large amount of data directly between two client.
+frp 提供了一种新的代理类型 **xtcp** 用于应对在希望传输大量数据且流量不经过服务器的场景。
 
-Now it can't penetrate all types of NAT devices. You can try **stcp** if **xtcp** doesn't work.
+使用方式同 **stcp** 类似，需要在两边都部署上 frpc 用于建立直接的连接。
 
-1. Configure a udp port for xtcp:
+目前处于开发的初级阶段，并不能穿透所有类型的 NAT 设备，所以穿透成功率较低。穿透失败时可以尝试 **stcp** 的方式。
+
+1. frps 除正常配置外需要额外配置一个 udp 端口用于支持该类型的客户端:
 
   ```ini
   bind_udp_port = 7001
   ```
 
-2. Start frpc, forward ssh port and `remote_port` is useless:
+2. 启动 frpc，转发内网的 ssh 服务，配置如下，不需要指定远程端口:
 
   ```ini
   # frpc.ini
@@ -335,12 +348,13 @@ Now it can't penetrate all types of NAT devices. You can try **stcp** if **xtcp*
 
   [p2p_ssh]
   type = xtcp
+  # 只有 sk 一致的用户才能访问到此服务
   sk = abcdefg
   local_ip = 127.0.0.1
   local_port = 22
   ```
 
-3. Start another frpc in which you want to connect this ssh server:
+3. 在要访问这个服务的机器上启动另外一个 frpc，配置如下:
 
   ```ini
   # frpc.ini
@@ -350,30 +364,35 @@ Now it can't penetrate all types of NAT devices. You can try **stcp** if **xtcp*
 
   [p2p_ssh_visitor]
   type = xtcp
+  # xtcp 的访问者
   role = visitor
+  # 要访问的 xtcp 代理的名字
   server_name = p2p_ssh
   sk = abcdefg
+  # 绑定本地端口用于访问 ssh 服务
   bind_addr = 127.0.0.1
   bind_port = 6000
   ```
 
-4. Connect to server in LAN by ssh assuming that username is test:
+4. 通过 ssh 访问内网机器，假设用户名为 test:
 
   `ssh -oPort=6000 test@127.0.0.1`
 
-## Features
+## 功能说明
 
-### Configuration File
+### 配置文件
 
-You can find features which this document not metioned from full example configuration files.
+由于 frp 目前支持的功能和配置项较多，未在文档中列出的功能可以从完整的示例配置文件中发现。
 
-[frps full configuration file](./conf/frps_full.ini)
+[frps 完整配置文件](./conf/frps_full.ini)
 
-[frpc full configuration file](./conf/frpc_full.ini)
+[frpc 完整配置文件](./conf/frpc_full.ini)
 
-### Configuration file template
+### 配置文件模版渲染
 
-Configuration file tempalte can be rendered using os environments. Template uses Go's standard format.
+配置文件支持使用系统环境变量进行模版渲染，模版格式采用 Go 的标准格式。
+
+示例配置如下:
 
 ```ini
 # frpc.ini
@@ -388,7 +407,7 @@ local_port = 22
 remote_port = {{ .Envs.FRP_SSH_REMOTE_PORT }}
 ```
 
-Start frpc program:
+启动 frpc 程序:
 
 ```
 export FRP_SERVER_ADDR="x.x.x.x"
@@ -396,32 +415,33 @@ export FRP_SSH_REMOTE_PORT="6000"
 ./frpc -c ./frpc.ini
 ```
 
-frpc will auto render configuration file template using os environments.
-All environments has prefix `.Envs`.
+frpc 会自动使用环境变量渲染配置文件模版，所有环境变量需要以 `.Envs` 为前缀。
 
 ### Dashboard
 
-Check frp's status and proxies's statistics information by Dashboard.
+通过浏览器查看 frp 的状态以及代理统计信息展示。
 
-Configure a port for dashboard to enable this feature:
+**注：Dashboard 尚未针对大量的 proxy 数据展示做优化，如果出现 Dashboard 访问较慢的情况，请不要启用此功能。**
+
+需要在 frps.ini 中指定 dashboard 服务使用的端口，即可开启此功能：
 
 ```ini
 [common]
 dashboard_port = 7500
-# dashboard's username and password are both optional，if not set, default is admin.
+# dashboard 用户名密码，默认都为 admin
 dashboard_user = admin
 dashboard_pwd = admin
 ```
 
-Then visit `http://[server_addr]:7500` to see dashboard, default username and password are both `admin`.
+打开浏览器通过 `http://[server_addr]:7500` 访问 dashboard 界面，用户名密码默认为 `admin`。
 
 ![dashboard](/doc/pic/dashboard.png)
 
 ### Admin UI
 
-Admin UI help you check and manage frpc's configure.
+Admin UI 可以帮助用户通过浏览器来查询和管理客户端的 proxy 状态和配置。
 
-Configure a address for admin UI to enable this feature:
+需要在 frpc.ini 中指定 admin 服务使用的端口，即可开启此功能：
 
 ```ini
 [common]
@@ -431,15 +451,17 @@ admin_user = admin
 admin_pwd = admin
 ```
 
-Then visit `http://127.0.0.1:7400` to see admin UI, default username and password are both `admin`.
+打开浏览器通过 `http://127.0.0.1:7400` 访问 Admin UI，用户名密码默认为 `admin`。
 
-### Authentication
+如果想要在外网环境访问 Admin UI，将 7400 端口映射出去即可，但需要重视安全风险。
 
-`token` in frps.ini and frpc.ini should be same.
+### 身份验证
 
-### Encryption and Compression
+服务端和客户端的 common 配置中的 `token` 参数一致则身份验证通过。
 
-Defalut value is false, you could decide if the proxy will use encryption or compression:
+### 加密与压缩
+
+这两个功能默认是不开启的，需要在 frpc.ini 中通过配置来为指定的代理启用加密与压缩的功能，压缩算法使用 snappy：
 
 ```ini
 # frpc.ini
@@ -451,17 +473,23 @@ use_encryption = true
 use_compression = true
 ```
 
+如果公司内网防火墙对外网访问进行了流量识别与屏蔽，例如禁止了 ssh 协议等，通过设置 `use_encryption = true`，将 frpc 与 frps 之间的通信内容加密传输，将会有效防止流量被拦截。
+
+如果传输的报文长度较长，通过设置 `use_compression = true` 对传输内容进行压缩，可以有效减小 frpc 与 frps 之间的网络流量，加快流量转发速度，但是会额外消耗一些 cpu 资源。
+
 #### TLS
 
-frp support TLS protocol between frpc and frps since v0.25.0.
+从 v0.25.0 版本开始 frpc 和 frps 之间支持通过 TLS 协议加密传输。通过在 `frpc.ini` 的 `common` 中配置 `tls_enable = true` 来启用此功能，安全性更高。
 
-Config `tls_enable = true` in `common` section to frpc.ini to enable this feature.
+为了端口复用，frp 建立 TLS 连接的第一个字节为 0x17。
 
-For port multiplexing, frp send a first byte 0x17 to dial a TLS connection.
+**注意: 启用此功能后除 xtcp 外，不需要再设置 use_encryption。**
 
-### Hot-Reload frpc configuration
+### 客户端热加载配置文件
 
-First you need to set admin port in frpc's configure file to let it provide HTTP API for more features.
+当修改了 frpc 中的代理配置，可以通过 `frpc reload` 命令来动态加载配置文件，通常会在 10 秒内完成代理的更新。
+
+启用此功能需要在 frpc 中启用 admin 端口，用于提供 API 服务。配置如下：
 
 ```ini
 # frpc.ini
@@ -470,17 +498,21 @@ admin_addr = 127.0.0.1
 admin_port = 7400
 ```
 
-Then run command `frpc reload -c ./frpc.ini` and wait for about 10 seconds to let frpc create or update or delete proxies.
+之后执行重启命令：
 
-**Note that parameters in [common] section won't be modified except 'start' now.**
+`frpc reload -c ./frpc.ini`
 
-### Get proxy status from client
+等待一段时间后客户端会根据新的配置文件创建、更新、删除代理。
 
-Use `frpc status -c ./frpc.ini` to get status of all proxies. You need to set admin port in frpc's configure file.
+**需要注意的是，[common] 中的参数除了 start 外目前无法被修改。**
 
-### Port White List
+### 客户端查看代理状态
 
-`allow_ports` in frps.ini is used for preventing abuse of ports:
+frpc 支持通过 `frpc status -c ./frpc.ini` 命令查看代理的状态信息，此功能需要在 frpc 中配置 admin 端口。
+
+### 端口白名单
+
+为了防止端口被滥用，可以手动指定允许哪些端口被使用，在 frps.ini 中通过 `allow_ports` 来指定：
 
 ```ini
 # frps.ini
@@ -488,60 +520,64 @@ Use `frpc status -c ./frpc.ini` to get status of all proxies. You need to set ad
 allow_ports = 2000-3000,3001,3003,4000-50000
 ```
 
-`allow_ports` consists of a specific port or a range of ports divided by `,`.
+`allow_ports` 可以配置允许使用的某个指定端口或者是一个范围内的所有端口，以 `,` 分隔，指定的范围以 `-` 分隔。
 
-### Port Reuse
+### 端口复用
 
-Now `vhost_http_port` and `vhost_https_port` in frps can use same port with `bind_port`. frps will detect connection's protocol and handle it correspondingly.
+目前 frps 中的 `vhost_http_port` 和 `vhost_https_port` 支持配置成和 `bind_port` 为同一个端口，frps 会对连接的协议进行分析，之后进行不同的处理。
 
-We would like to try to allow multiple proxies bind a same remote port with different protocols in the future.
+例如在某些限制较严格的网络环境中，可以将 `bind_port` 和 `vhost_https_port` 都设置为 443。
 
-### TCP Stream Multiplexing
+后续会尝试允许多个 proxy 绑定同一个远端端口的不同协议。
 
-frp support tcp stream multiplexing since v0.10.0 like HTTP2 Multiplexing. All user requests to same frpc can use only one tcp connection.
+### TCP 多路复用
 
-You can disable this feature by modify frps.ini and frpc.ini:
+从 v0.10.0 版本开始，客户端和服务器端之间的连接支持多路复用，不再需要为每一个用户请求创建一个连接，使连接建立的延迟降低，并且避免了大量文件描述符的占用，使 frp 可以承载更高的并发数。
+
+该功能默认启用，如需关闭，可以在 frps.ini 和 frpc.ini 中配置，该配置项在服务端和客户端必须一致：
 
 ```ini
-# frps.ini and frpc.ini, must be same
+# frps.ini 和 frpc.ini 中
 [common]
 tcp_mux = false
 ```
 
-### Support KCP Protocol
+### 底层通信可选 kcp 协议
 
-KCP is a fast and reliable protocol that can achieve the transmission effect of a reduction of the average latency by 30% to 40% and reduction of the maximum delay by a factor of three, at the cost of 10% to 20% more bandwidth wasted than TCP.
+底层通信协议支持选择 kcp 协议，在弱网环境下传输效率提升明显，但是会有一些额外的流量消耗。
 
-Using kcp in frp:
+开启 kcp 协议支持：
 
-1. Enable kcp protocol in frps:
+1. 在 frps.ini 中启用 kcp 协议支持，指定一个 udp 端口用于接收客户端请求：
 
   ```ini
   # frps.ini
   [common]
   bind_port = 7000
-  # kcp needs to bind a udp port, it can be same with 'bind_port'
+  # kcp 绑定的是 udp 端口，可以和 bind_port 一样
   kcp_bind_port = 7000
   ```
 
-2. Configure the protocol used in frpc to connect frps:
+2. 在 frpc.ini 指定需要使用的协议类型，目前只支持 tcp 和 kcp。其他代理配置不需要变更：
 
   ```ini
   # frpc.ini
   [common]
   server_addr = x.x.x.x
-  # specify the 'kcp_bind_port' in frps
+  # server_port 指定为 frps 的 kcp_bind_port
   server_port = 7000
   protocol = kcp
   ```
 
-### Connection Pool
+3. 像之前一样使用 frp，需要注意开放相关机器上的 udp 的端口的访问权限。
 
-By default, frps send message to frpc for create a new connection to backward service when getting an user request.If a proxy's connection pool is enabled, there will be a specified number of connections pre-established.
+### 连接池
 
-This feature is fit for a large number of short connections.
+默认情况下，当用户请求建立连接后，frps 才会请求 frpc 主动与后端服务建立一个连接。当为指定的代理启用连接池后，frp 会预先和后端服务建立起指定数量的连接，每次接收到用户请求后，会从连接池中取出一个连接和用户连接关联起来，避免了等待与后端服务建立连接以及 frpc 和 frps 之间传递控制信息的时间。
 
-1. Configure the limit of pool count each proxy can use in frps.ini:
+这一功能比较适合有大量短连接请求时开启。
+
+1. 首先可以在 frps.ini 中设置每个代理可以创建的连接池上限，避免大量资源占用，客户端设置超过此配置后会被调整到当前值：
 
   ```ini
   # frps.ini
@@ -549,7 +585,7 @@ This feature is fit for a large number of short connections.
   max_pool_count = 5
   ```
 
-2. Enable and specify the number of connection pool:
+2. 在 frpc.ini 中为客户端启用连接池，指定预创建连接的数量：
 
   ```ini
   # frpc.ini
@@ -557,10 +593,11 @@ This feature is fit for a large number of short connections.
   pool_count = 1
   ```
 
-### Load balancing
+### 负载均衡
 
-Load balancing is supported by `group`.
-This feature is available only for type `tcp` now.
+可以将多个相同类型的 proxy 加入到同一个 group 中，从而实现负载均衡的功能。
+
+目前只支持 tcp 类型的 proxy。
 
 ```ini
 # frpc.ini
@@ -579,21 +616,21 @@ group = web
 group_key = 123
 ```
 
-`group_key` is used for authentication.
+用户连接 frps 服务器的 80 端口，frps 会将接收到的用户连接随机分发给其中一个存活的 proxy。这样可以在一台 frpc 机器挂掉后仍然有其他节点能够提供服务。
 
-Proxies in same group will accept connections from port 80 randomly.
+要求 `group_key` 相同，做权限验证，且 `remote_port` 相同。
 
-### Health Check
+### 健康检查
 
-Health check feature can help you achieve high availability with load balancing.
+通过给 proxy 加上健康检查的功能，可以在要反向代理的服务出现故障时，将这个服务从 frps 中摘除，搭配负载均衡的功能，可以用来实现高可用的架构，避免服务单点故障。
 
-Add `health_check_type = {type}` to enable health check.
+在每一个 proxy 的配置下加上 `health_check_type = {type}` 来启用健康检查功能。
 
-**type** can be tcp or http.
+**type** 目前可选 tcp 和 http。
 
-Type tcp will dial the service port and type http will send a http rquest to service and require a 200 response.
+tcp 只要能够建立连接则认为服务正常，http 会发送一个 http 请求，服务需要返回 2xx 的状态码才会被认为正常。
 
-Type tcp configuration:
+tcp 示例配置如下：
 
 ```ini
 # frpc.ini
@@ -601,17 +638,18 @@ Type tcp configuration:
 type = tcp
 local_port = 22
 remote_port = 6000
-# enable tcp health check
+# 启用健康检查，类型为 tcp
 health_check_type = tcp
-# dial timeout seconds
+# 建立连接超时时间为 3 秒
 health_check_timeout_s = 3
-# if continuous failed in 3 times, the proxy will be removed from frps
+# 连续 3 次检查失败，此 proxy 会被摘除
 health_check_max_failed = 3
-# every 10 seconds will do a health check
+# 每隔 10 秒进行一次健康检查
 health_check_interval_s = 10
 ```
 
-Type http configuration:
+http 示例配置如下：
+
 ```ini
 # frpc.ini
 [web]
@@ -619,19 +657,18 @@ type = http
 local_ip = 127.0.0.1
 local_port = 80
 custom_domains = test.yourdomain.com
-# enable http health check
+# 启用健康检查，类型为 http
 health_check_type = http
-# frpc will send a GET http request '/status' to local http service
-# http service is alive when it return 2xx http response code
+# 健康检查发送 http 请求的 url，后端服务需要返回 2xx 的 http 状态码
 health_check_url = /status
 health_check_interval_s = 10
 health_check_max_failed = 3
 health_check_timeout_s = 3
 ```
 
-### Rewriting the Host Header
+### 修改 Host Header
 
-When forwarding to a local port, frp does not modify the tunneled HTTP requests at all, they are copied to your server byte-for-byte as they are received. Some application servers use the Host header for determining which development site to display. For this reason, frp can rewrite your requests with a modified host header. Use the `host_header_rewrite` switch to rewrite incoming HTTP requests.
+通常情况下 frp 不会修改转发的任何数据。但有一些后端服务会根据 http 请求 header 中的 host 字段来展现不同的网站，例如 nginx 的虚拟主机服务，启用 host-header 的修改功能可以动态修改 http 请求中的 host 字段。该功能仅限于 http 类型的代理。
 
 ```ini
 # frpc.ini
@@ -642,11 +679,11 @@ custom_domains = test.yourdomain.com
 host_header_rewrite = dev.yourdomain.com
 ```
 
-The `Host` request header will be rewritten to `Host: dev.yourdomain.com` before it reach your local http server.
+原来 http 请求中的 host 字段 `test.yourdomain.com` 转发到后端服务时会被替换为 `dev.yourdomain.com`。
 
-### Set Headers In HTTP Request
+### 设置 HTTP 请求的 header
 
-You can set headers for proxy which type is `http`.
+对于 `type = http` 的代理，可以设置在转发中动态添加的 header 参数。
 
 ```ini
 # frpc.ini
@@ -658,22 +695,23 @@ host_header_rewrite = dev.yourdomain.com
 header_X-From-Where = frp
 ```
 
-Note that params which have prefix `header_` will be added to http request headers.
-In this example, it will set header `X-From-Where: frp` to http request.
+对于参数配置中所有以 `header_` 开头的参数(支持同时配置多个)，都会被添加到 http 请求的 header 中，根据如上的配置，会在请求的 header 中加上 `X-From-Where: frp`。
 
-### Get Real IP
+### 获取用户真实 IP
 
 #### HTTP X-Forwarded-For
 
-Features for http proxy only.
-
-You can get user's real IP from HTTP request header `X-Forwarded-For` and `X-Real-IP`.
+目前只有 **http** 类型的代理支持这一功能，可以通过用户请求的 header 中的 `X-Forwarded-For` 来获取用户真实 IP，默认启用。
 
 #### Proxy Protocol
 
-frp support Proxy Protocol to send user's real IP to local service. It support all types without UDP.
+frp 支持通过 **Proxy Protocol** 协议来传递经过 frp 代理的请求的真实 IP，此功能支持所有以 TCP 为底层协议的类型，不支持 UDP。
 
-Here is an example for https service:
+**Proxy Protocol** 功能启用后，frpc 在和本地服务建立连接后，会先发送一段 **Proxy Protocol** 的协议内容给本地服务，本地服务通过解析这一内容可以获得访问用户的真实 IP。所以不仅仅是 HTTP 服务，任何的 TCP 服务，只要支持这一协议，都可以获得用户的真实 IP 地址。
+
+需要注意的是，在代理配置中如果要启用此功能，需要本地的服务能够支持 **Proxy Protocol** 这一协议，目前 nginx 和 haproxy 都能够很好的支持。
+
+这里以 https 类型为例:
 
 ```ini
 # frpc.ini
@@ -682,21 +720,21 @@ type = https
 local_port = 443
 custom_domains = test.yourdomain.com
 
-# now v1 and v2 is supported
+# 目前支持 v1 和 v2 两个版本的 proxy protocol 协议。
 proxy_protocol_version = v2
 ```
 
-You can enable Proxy Protocol support in nginx to parse user's real IP to http header `X-Real-IP`.
+只需要在代理配置中增加一行 `proxy_protocol_version = v2` 即可开启此功能。
 
-Then you can get it from HTTP request header in your local service.
+本地的 https 服务可以通过在 nginx 的配置中启用 **Proxy Protocol** 的解析并将结果设置在 `X-Real-IP` 这个 Header 中就可以在自己的 Web 服务中通过 `X-Real-IP` 获取到用户的真实 IP。
 
-### Password protecting your web service
+### 通过密码保护你的 web 服务
 
-Anyone who can guess your tunnel URL can access your local web server unless you protect it with a password.
+由于所有客户端共用一个 frps 的 http 服务端口，任何知道你的域名和 url 的人都能访问到你部署在内网的 web 服务，但是在某些场景下需要确保只有限定的用户才能访问。
 
-This enforces HTTP Basic Auth on all requests with the username and password you specify in frpc's configure file.
+frp 支持通过 HTTP Basic Auth 来保护你的 web 服务，使用户需要通过用户名和密码才能访问到你的服务。
 
-It can only be enabled when proxy type is http.
+该功能目前仅限于 http 类型的代理，需要在 frpc 的代理配置中添加用户名和密码的设置。
 
 ```ini
 # frpc.ini
@@ -708,18 +746,23 @@ http_user = abc
 http_pwd = abc
 ```
 
-Visit `http://test.yourdomain.com` and now you need to input username and password.
+通过浏览器访问 `http://test.yourdomain.com`，需要输入配置的用户名和密码才能访问。
 
-### Custom subdomain names
+### 自定义二级域名
 
-It is convenient to use `subdomain` configure for http、https type when many people use one frps server together.
+在多人同时使用一个 frps 时，通过自定义二级域名的方式来使用会更加方便。
+
+通过在 frps 的配置文件中配置 `subdomain_host`，就可以启用该特性。之后在 frpc 的 http、https 类型的代理中可以不配置 `custom_domains`，而是配置一个 `subdomain` 参数。
+
+只需要将 `*.{subdomain_host}` 解析到 frps 所在服务器。之后用户可以通过 `subdomain` 自行指定自己的 web 服务所需要使用的二级域名，通过 `{subdomain}.{subdomain_host}` 来访问自己的 web 服务。
 
 ```ini
 # frps.ini
+[common]
 subdomain_host = frps.com
 ```
 
-Resolve `*.frps.com` to the frps server's IP.
+将泛域名 `*.frps.com` 解析到 frps 所在服务器的 IP 地址。
 
 ```ini
 # frpc.ini
@@ -729,15 +772,17 @@ local_port = 80
 subdomain = test
 ```
 
-Now you can visit your web service by host `test.frps.com`.
+frps 和 frpc 都启动成功后，通过 `test.frps.com` 就可以访问到内网的 web 服务。
 
-Note that if `subdomain_host` is not empty, `custom_domains` should not be the subdomain of `subdomain_host`.
+**注：如果 frps 配置了 `subdomain_host`，则 `custom_domains` 中不能是属于 `subdomain_host` 的子域名或者泛域名。**
 
-### URL routing
+同一个 http 或 https 类型的代理中 `custom_domains`  和 `subdomain` 可以同时配置。
 
-frp support forward http requests to different backward web services by url routing.
+### URL 路由
 
-`locations` specify the prefix of URL used for routing. frps first searches for the most specific prefix location given by literal strings regardless of the listed order.
+frp 支持根据请求的 URL 路径路由转发到不同的后端服务。
+
+通过配置文件中的 `locations` 字段指定一个或多个 proxy 能够匹配的 URL 前缀(目前仅支持最大前缀匹配，之后会考虑正则匹配)。例如指定 `locations = /news`，则所有 URL 以 `/news` 开头的请求都会被转发到这个服务。
 
 ```ini
 # frpc.ini
@@ -753,13 +798,16 @@ local_port = 81
 custom_domains = web.yourdomain.com
 locations = /news,/about
 ```
-Http requests with url prefix `/news` and `/about` will be forwarded to **web02** and others to **web01**.
 
-### Connect frps by HTTP PROXY
+按照上述的示例配置后，`web.yourdomain.com` 这个域名下所有以 `/news` 以及 `/about` 作为前缀的 URL 请求都会被转发到 web02，其余的请求会被转发到 web01。
 
-frpc can connect frps using HTTP PROXY if you set os environment `HTTP_PROXY` or configure `http_proxy` param in frpc.ini file.
+### 通过代理连接 frps
 
-It only works when protocol is tcp.
+在只能通过代理访问外网的环境内，frpc 支持通过 HTTP PROXY 和 frps 进行通信。
+
+可以通过设置 `HTTP_PROXY` 系统环境变量或者通过在 frpc 的配置文件中设置 `http_proxy` 参数来使用此功能。
+
+仅在 `protocol = tcp` 时生效。
 
 ```ini
 # frpc.ini
@@ -769,9 +817,13 @@ server_port = 7000
 http_proxy = http://user:pwd@192.168.1.128:8080
 ```
 
-### Range ports mapping
+### 范围端口映射
 
-Proxy name has prefix `range:` will support mapping range ports.
+在 frpc 的配置文件中可以指定映射多个端口，目前只支持 tcp 和 udp 的类型。
+
+这一功能通过 `range:` 段落标记来实现，客户端会解析这个标记中的配置，将其拆分成多个 proxy，每一个 proxy 以数字为后缀命名。
+
+例如要映射本地 6000-6005, 6007 这6个端口，主要配置如下：
 
 ```ini
 # frpc.ini
@@ -782,17 +834,17 @@ local_port = 6000-6006,6007
 remote_port = 6000-6006,6007
 ```
 
-frpc will generate 8 proxies like `test_tcp_0, test_tcp_1 ... test_tcp_7`.
+实际连接成功后会创建 8 个 proxy，命名为 `test_tcp_0, test_tcp_1 ... test_tcp_7`。
 
-### Plugin
+### 插件
 
-frpc only forward request to local tcp or udp port by default.
+默认情况下，frpc 只会转发请求到本地 tcp 或 udp 端口。
 
-Plugin is used for providing rich features. There are built-in plugins such as `unix_domain_socket`, `http_proxy`, `socks5`, `static_file` and you can see [example usage](#example-usage).
+插件模式是为了在客户端提供更加丰富的功能，目前内置的插件有 `unix_domain_socket`、`http_proxy`、`socks5`、`static_file`。具体使用方式请查看[使用示例](#使用示例)。
 
-Specify which plugin to use by `plugin` parameter. Configuration parameters of plugin should be started with `plugin_`. `local_ip` and `local_port` is useless for plugin.
+通过 `plugin` 指定需要使用的插件，插件的配置参数都以 `plugin_` 开头。使用插件后 `local_ip` 和 `local_port` 不再需要配置。
 
-Using plugin **http_proxy**:
+使用 **http_proxy** 插件的示例:
 
 ```ini
 # frpc.ini
@@ -804,37 +856,47 @@ plugin_http_user = abc
 plugin_http_passwd = abc
 ```
 
-`plugin_http_user` and `plugin_http_passwd` are configuration parameters used in `http_proxy` plugin.
+`plugin_http_user` 和 `plugin_http_passwd` 即为 `http_proxy` 插件可选的配置参数。
 
-## Development Plan
+## 开发计划
 
-* Log http request information in frps.
+计划在后续版本中加入的功能与优化，排名不分先后，如果有其他功能建议欢迎在 [issues](https://github.com/fatedier/frp/issues) 中反馈。
 
-## Contributing
+* frps 记录 http 请求日志。
 
-Interested in getting involved? We would like to help you!
+## 为 frp 做贡献
 
-* Take a look at our [issues list](https://github.com/fatedier/frp/issues) and consider sending a Pull Request to **dev branch**.
-* If you want to add a new feature, please create an issue first to describe the new feature, as well as the implementation approach. Once a proposal is accepted, create an implementation of the new features and submit it as a pull request.
-* Sorry for my poor english and improvement for this document is welcome even some typo fix.
-* If you have some wonderful ideas, send email to fatedier@gmail.com.
+frp 是一个免费且开源的项目，我们欢迎任何人为其开发和进步贡献力量。
 
-**Note: We prefer you to give your advise in [issues](https://github.com/fatedier/frp/issues), so others with a same question can search it quickly and we don't need to answer them repeatly.**
+* 在使用过程中出现任何问题，可以通过 [issues](https://github.com/fatedier/frp/issues) 来反馈。
+* Bug 的修复可以直接提交 Pull Request 到 dev 分支。
+* 如果是增加新的功能特性，请先创建一个 issue 并做简单描述以及大致的实现方法，提议被采纳后，就可以创建一个实现新特性的 Pull Request。
+* 欢迎对说明文档做出改善，帮助更多的人使用 frp，特别是英文文档。
+* 贡献代码请提交 PR 至 dev 分支，master 分支仅用于发布稳定可用版本。
+* 如果你有任何其他方面的问题，欢迎反馈至 fatedier@gmail.com 共同交流。
 
-## Donation
+**提醒：和项目相关的问题最好在 [issues](https://github.com/fatedier/frp/issues) 中反馈，这样方便其他有类似问题的人可以快速查找解决方法，并且也避免了我们重复回答一些问题。**
 
-If frp help you a lot, you can support us by:
+## 捐助
 
-frp QQ group: 606194980
+如果您觉得 frp 对你有帮助，欢迎给予我们一定的捐助来维持项目的长期发展。
 
-### AliPay
+frp 交流群：606194980 (QQ 群号)
 
-![donation-alipay](/doc/pic/donate-alipay.png)
+### 知识星球
 
-### Wechat Pay
+如果您想学习 frp 相关的知识和技术，或者寻求任何帮助，都可以通过微信扫描下方的二维码付费加入知识星球的官方社群：
 
-![donation-wechatpay](/doc/pic/donate-wechatpay.png)
+![zsxq](/doc/pic/zsxq.jpg)
 
-### Paypal
+### 支付宝扫码捐赠
 
-Donate money by [paypal](https://www.paypal.me/fatedier) to my account **fatedier@gmail.com**.
+![donate-alipay](/doc/pic/donate-alipay.png)
+
+### 微信支付捐赠
+
+![donate-wechatpay](/doc/pic/donate-wechatpay.png)
+
+### Paypal 捐赠
+
+海外用户推荐通过 [Paypal](https://www.paypal.me/fatedier) 向我的账户 **fatedier@gmail.com** 进行捐赠。
